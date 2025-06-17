@@ -33,3 +33,11 @@ resource "aws_s3_object" "housing_training_code" {
   source = "../housing/training/code/sourcedir.tar.gz"
   etag   = filemd5("../housing/training/code/sourcedir.tar.gz")
 }
+
+# Housing Model Evaluation Resources
+resource "aws_s3_object" "housing_evaluating_data" {
+  bucket = aws_s3_bucket.sm_poc_bucket.bucket
+  key    = "/housing/evaluating/code/evaluate.py"
+  source = "../housing/evaluating/code/evaluate.py"
+  etag   = filemd5("../housing/evaluating/code/evaluate.py")
+}
