@@ -1,0 +1,188 @@
+{
+  "Version": "2020-12-01",
+  "Parameters": [
+    {
+      "Name": "TrainingInstanceType",
+      "Type": "String",
+      "DefaultValue": "ml.m5.xlarge"
+    },
+    {
+      "Name": "ProcessingInstanceType",
+      "Type": "String",
+      "DefaultValue": "ml.m5.xlarge"
+    },
+    {
+      "Name": "ProcessingInstanceCount",
+      "Type": "Integer",
+      "DefaultValue": 1
+    },
+    {
+      "Name": "InputData",
+      "Type": "String",
+      "DefaultValue": "s3://${bucket}/housing/preprocessing/input"
+    },
+    {
+      "Name": "ModelApprovalStatus",
+      "Type": "String",
+      "DefaultValue": "Approved"
+    },
+    {
+      "Name": "TrainingEpochs",
+      "Type": "String",
+      "DefaultValue": "100"
+    },
+    {
+      "Name": "AccuracyMseThreshold",
+      "Type": "Float",
+      "DefaultValue": 0.75
+    }
+  ],
+  "Steps": [
+    {
+      "Name": "PreprocessData",
+      "Type": "Processing",
+      "Arguments": {
+        "ProcessingResources": {
+          "ClusterConfig": {
+            "InstanceType": {
+              "Get": "Parameters.ProcessingInstanceType"
+            },
+            "InstanceCount": {
+              "Get": "Parameters.ProcessingInstanceCount"
+            },
+            "VolumeSizeInGB": 30
+          }
+        },
+        "AppSpecification": {
+          "ImageUri": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3",
+          "ContainerEntrypoint": [
+            "python3",
+            "${base_container_dir}/code/preprocess.py"
+          ]
+        },
+        "RoleArn": "${execution_role_arn}",
+        "ProcessingInputs": [
+          {
+            "InputName": "input-data",
+            "AppManaged": false,
+            "S3Input": {
+              "S3Uri": {
+                "Get": "Parameters.InputData"
+              },
+              "LocalPath": "${base_container_dir}/input",
+              "S3DataType": "S3Prefix",
+              "S3InputMode": "File",
+              "S3DataDistributionType": "FullyReplicated",
+              "S3CompressionType": "None"
+            }
+          },
+          {
+            "InputName": "code",
+            "AppManaged": false,
+            "S3Input": {
+              "S3Uri": "s3://${bucket}/housing/preprocessing/code/preprocess.py",
+              "LocalPath": "${base_container_dir}/code",
+              "S3DataType": "S3Prefix",
+              "S3InputMode": "File",
+              "S3DataDistributionType": "FullyReplicated",
+              "S3CompressionType": "None"
+            }
+          }
+        ],
+        "ProcessingOutputConfig": {
+          "Outputs": [
+            {
+              "OutputName": "scaler_model",
+              "AppManaged": false,
+              "S3Output": {
+                "S3Uri": "s3://${bucket}/housing/preprocessing/output/scaler_model",
+                "LocalPath": "${base_container_dir}/scaler_model",
+                "S3UploadMode": "EndOfJob"
+              }
+            },
+            {
+              "OutputName": "train",
+              "AppManaged": false,
+              "S3Output": {
+                "S3Uri": "s3://${bucket}/housing/preprocessing/output/train",
+                "LocalPath": "${base_container_dir}/train",
+                "S3UploadMode": "EndOfJob"
+              }
+            },
+            {
+              "OutputName": "test",
+              "AppManaged": false,
+              "S3Output": {
+                "S3Uri": "s3://${bucket}/housing/preprocessing/output/test",
+                "LocalPath": "${base_container_dir}/test",
+                "S3UploadMode": "EndOfJob"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+                "Name":"TrainTensorflowModel",
+                "Type":"Training",
+                "Arguments":{
+                    "AlgorithmSpecification":{
+                        "TrainingInputMode":"File",
+                        "TrainingImage":"763104351884.dkr.ecr.us-east-1.amazonaws.com/tensorflow-training:2.4.1-cpu-py37",
+                        "EnableSageMakerMetricsTimeSeries":true
+                    },
+                    "OutputDataConfig":{
+                        "S3OutputPath":"s3://${bucket}/housing/training/model/"
+                    },
+                    "StoppingCondition":{
+                        "MaxRuntimeInSeconds":600
+                    },
+                    "ResourceConfig":{
+                        "VolumeSizeInGB":30,
+                        "InstanceCount":1,
+                        "InstanceType":{
+                            "Get":"Parameters.TrainingInstanceType"
+                        }
+                    },
+                    "RoleArn":"${execution_role_arn}",
+                    "InputDataConfig":[
+                        {
+                            "DataSource":{
+                                "S3DataSource":{
+                                    "S3DataType":"S3Prefix",
+                                    "S3Uri":{
+                                        "Get":"Steps.PreprocessData.ProcessingOutputConfig.Outputs['train'].S3Output.S3Uri"
+                                    },
+                                    "S3DataDistributionType":"FullyReplicated"
+                                }
+                            },
+                            "ContentType":"text/csv",
+                            "ChannelName":"train"
+                        },
+                        {
+                            "DataSource":{
+                                "S3DataSource":{
+                                    "S3DataType":"S3Prefix",
+                                    "S3Uri":{
+                                        "Get":"Steps.PreprocessData.ProcessingOutputConfig.Outputs['test'].S3Output.S3Uri"
+                                    },
+                                    "S3DataDistributionType":"FullyReplicated"
+                                }
+                            },
+                            "ContentType":"text/csv",
+                            "ChannelName":"test"
+                        }
+                    ],
+                    "HyperParameters":{
+                        "epochs":{
+                            "Get":"Parameters.TrainingEpochs"
+                        },
+                        "sagemaker_submit_directory":"\"s3://${bucket}/housing/training/code/sourcedir.tar.gz\"",
+                        "sagemaker_program":"\"train.py\"",
+                        "sagemaker_container_log_level":"20",
+                        "sagemaker_region":"\"us-east-1\""
+                    }
+                }
+            }
+  ]
+}
