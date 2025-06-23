@@ -95,7 +95,19 @@
               "OutputName": "scaler_model",
               "AppManaged": false,
               "S3Output": {
-                "S3Uri": "s3://${bucket}/housing/preprocessing/output/scaler_model",
+                "S3Uri": {
+                    "Std:Join": {
+                        "On": "/",
+                        "Values": [
+                            "s3:/",
+                            "${bucket}/housing/preprocessing/output",
+                            {
+                                "Get": "Execution.StartDateTime"
+                            },
+                            "scaler_model"
+                        ]
+                    }
+                },
                 "LocalPath": "${base_container_dir}/scaler_model",
                 "S3UploadMode": "EndOfJob"
               }
@@ -104,7 +116,19 @@
               "OutputName": "train",
               "AppManaged": false,
               "S3Output": {
-                "S3Uri": "s3://${bucket}/housing/preprocessing/output/train",
+                "S3Uri": {
+                  "Std:Join": {
+                      "On": "/",
+                      "Values": [
+                          "s3:/",
+                          "${bucket}/housing/preprocessing/output",
+                          {
+                              "Get": "Execution.StartDateTime"
+                          },
+                          "train"
+                      ]
+                  }
+                },
                 "LocalPath": "${base_container_dir}/train",
                 "S3UploadMode": "EndOfJob"
               }
@@ -113,7 +137,19 @@
               "OutputName": "test",
               "AppManaged": false,
               "S3Output": {
-                "S3Uri": "s3://${bucket}/housing/preprocessing/output/test",
+                "S3Uri": {
+                  "Std:Join": {
+                      "On": "/",
+                      "Values": [
+                          "s3:/",
+                          "${bucket}/housing/preprocessing/output",
+                          {
+                              "Get": "Execution.StartDateTime"
+                          },
+                          "test"
+                      ]
+                  }
+                },
                 "LocalPath": "${base_container_dir}/test",
                 "S3UploadMode": "EndOfJob"
               }
