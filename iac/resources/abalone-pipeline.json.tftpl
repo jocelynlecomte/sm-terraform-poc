@@ -194,6 +194,100 @@
                     "subsample": "0.7"
                 }
             }
+        },
+        {
+            "Name": "AbaloneEvaluation",
+            "Type": "Processing",
+            "Arguments": {
+                "ProcessingResources": {
+                    "ClusterConfig": {
+                        "InstanceType": "ml.m5.xlarge",
+                        "InstanceCount": 1,
+                        "VolumeSizeInGB": 30
+                    }
+                },
+                "AppSpecification": {
+                    "ImageUri": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.0-1-cpu-py3",
+                    "ContainerEntrypoint": [
+                        "python3",
+                        "${base_container_dir}/code/evaluation.py"
+                    ]
+                },
+                "RoleArn": "${execution_role_arn}",
+                "ProcessingInputs": [
+                    {
+                        "InputName": "model-artifacts",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": {
+                                "Get": "Steps.AbaloneTrain.ModelArtifacts.S3ModelArtifacts"
+                            },
+                            "LocalPath": "${base_container_dir}/model",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    },
+                    {
+                        "InputName": "test-data",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": {
+                                "Get": "Steps.AbaloneProcess.ProcessingOutputConfig.Outputs['test'].S3Output.S3Uri"
+                            },
+                            "LocalPath": "${base_container_dir}/test",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    },
+                    {
+                        "InputName": "code",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": "s3://${bucket}/abalone/evaluation/code/evaluation.py",
+                            "LocalPath": "${base_container_dir}/code",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    }
+                ],
+                "ProcessingOutputConfig": {
+                    "Outputs": [
+                        {
+                            "OutputName": "evaluation",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": {
+                                    "Std:Join": {
+                                        "On": "/",
+                                        "Values": [
+                                            "s3://${bucket}/AbalonePipeline",
+                                            {
+                                                "Get": "Execution.PipelineExecutionId"
+                                            },
+                                            "AbaloneEvaluation/output"
+                                        ]
+                                    }
+                                },
+                                "LocalPath": "${base_container_dir}/evaluation",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        }
+                    ]
+                }
+            },
+            "PropertyFiles": [
+                {
+                    "PropertyFileName": "EvaluationReport",
+                    "OutputName": "evaluation",
+                    "FilePath": "evaluation.json"
+                }
+            ]
         }
     ]
 }

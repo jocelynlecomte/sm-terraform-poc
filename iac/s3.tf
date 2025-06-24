@@ -59,3 +59,11 @@ resource "aws_s3_object" "abalone_preprocessing_data" {
   source = "../abalone/preprocessing/data/abalone-dataset.csv"
   etag   = filemd5("../abalone/preprocessing/data/abalone-dataset.csv")
 }
+
+# Abalone Model Evaluation Resources
+resource "aws_s3_object" "abalone_evaluating_data" {
+  bucket = aws_s3_bucket.sm_poc_bucket.bucket
+  key    = "/abalone/evaluation/code/evaluation.py"
+  source = "../abalone/evaluation/code/evaluation.py"
+  etag   = filemd5("../abalone/evaluation/code/evaluation.py")
+}
