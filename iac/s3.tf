@@ -11,6 +11,7 @@ resource "aws_s3_bucket_versioning" "versioning" {
   }
 }
 
+################ Housing Pipeline Resources ################
 # Housing Preprocessing Resources
 resource "aws_s3_object" "housing_preprocessing_code" {
   bucket = aws_s3_bucket.sm_poc_bucket.bucket
@@ -40,4 +41,21 @@ resource "aws_s3_object" "housing_evaluating_data" {
   key    = "/housing/evaluating/code/evaluate.py"
   source = "../housing/evaluating/code/evaluate.py"
   etag   = filemd5("../housing/evaluating/code/evaluate.py")
+}
+################ Housing Pipeline Resources ################
+
+################ Abalone Pipeline Resources ################
+# Abalone Preprocessing Resources
+resource "aws_s3_object" "abalone_preprocessing_code" {
+  bucket = aws_s3_bucket.sm_poc_bucket.bucket
+  key    = "/abalone/preprocessing/code/preprocessing.py"
+  source = "../abalone/preprocessing/code/preprocessing.py"
+  etag = filemd5("../abalone/preprocessing/code/preprocessing.py")
+}
+
+resource "aws_s3_object" "abalone_preprocessing_data" {
+  bucket = aws_s3_bucket.sm_poc_bucket.bucket
+  key    = "/abalone/preprocessing/input/input-data.csv"
+  source = "../abalone/preprocessing/data/abalone-dataset.csv"
+  etag   = filemd5("../abalone/preprocessing/data/abalone-dataset.csv")
 }

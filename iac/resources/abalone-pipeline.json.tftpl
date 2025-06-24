@@ -1,0 +1,133 @@
+{
+    "Version": "2020-12-01",
+    "Metadata": {},
+    "Parameters": [
+        {
+            "Name": "ProcessingInstanceCount",
+            "Type": "Integer",
+            "DefaultValue": 1
+        },
+        {
+            "Name": "InputData",
+            "Type": "String",
+            "DefaultValue": "s3://${bucket}/abalone/preprocessing/input/input-data.csv"
+        }
+    ],
+    "Steps": [
+        {
+            "Name": "AbaloneProcess",
+            "Type": "Processing",
+            "Arguments": {
+                "ProcessingResources": {
+                    "ClusterConfig": {
+                        "InstanceType": "ml.m5.xlarge",
+                        "InstanceCount": {
+                            "Get": "Parameters.ProcessingInstanceCount"
+                        },
+                        "VolumeSizeInGB": 30
+                    }
+                },
+                "AppSpecification": {
+                    "ImageUri": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3",
+                    "ContainerEntrypoint": [
+                        "python3",
+                        "${base_container_dir}/code/preprocessing.py"
+                    ]
+                },
+                "RoleArn": "${execution_role_arn}",
+                "ProcessingInputs": [
+                    {
+                        "InputName": "input-data",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": {
+                                "Get": "Parameters.InputData"
+                            },
+                            "LocalPath": "${base_container_dir}/input",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    },
+                    {
+                        "InputName": "code",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": "s3://${bucket}/abalone/preprocessing/code/preprocessing.py",
+                            "LocalPath": "${base_container_dir}/code",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    }
+                ],
+                "ProcessingOutputConfig": {
+                    "Outputs": [
+                        {
+                            "OutputName": "train",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": {
+                                    "Std:Join": {
+                                        "On": "/",
+                                        "Values": [
+                                            "s3://${bucket}/AbalonePipeline",
+                                            {
+                                                "Get": "Execution.PipelineExecutionId"
+                                            },
+                                            "AbaloneProcess/output/train"
+                                        ]
+                                    }
+                                },
+                                "LocalPath": "${base_container_dir}/train",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        },
+                        {
+                            "OutputName": "validation",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": {
+                                    "Std:Join": {
+                                        "On": "/",
+                                        "Values": [
+                                            "s3://${bucket}/AbalonePipeline",
+                                            {
+                                                "Get": "Execution.PipelineExecutionId"
+                                            },
+                                            "AbaloneProcess/output/validation"
+                                        ]
+                                    }
+                                },
+                                "LocalPath": "${base_container_dir}/validation",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        },
+                        {
+                            "OutputName": "test",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": {
+                                    "Std:Join": {
+                                        "On": "/",
+                                        "Values": [
+                                            "s3://${bucket}/AbalonePipeline",
+                                            {
+                                                "Get": "Execution.PipelineExecutionId"
+                                            },
+                                            "AbaloneProcess/output/test"
+                                        ]
+                                    }
+                                },
+                                "LocalPath": "${base_container_dir}/test",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

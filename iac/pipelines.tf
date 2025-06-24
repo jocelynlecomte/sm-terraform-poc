@@ -21,3 +21,16 @@ resource "aws_sagemaker_pipeline" "housing_pipeline" {
     base_container_dir = "/opt/ml/processing",
   })
 }
+
+resource "aws_sagemaker_pipeline" "abalone_pipeline" {
+  pipeline_name         = "abalone-pipeline"
+  pipeline_display_name = "abalone-pipeline-display"
+  pipeline_description  = "Abalone SageMaker Pipeline for POC"
+  role_arn              = aws_iam_role.sm_role.arn
+
+  pipeline_definition = templatefile("${path.module}/resources/abalone-pipeline.json.tftpl", {
+    bucket = aws_s3_bucket.sm_poc_bucket.bucket,
+    execution_role_arn = aws_iam_role.sm_role.arn,
+    base_container_dir = "/opt/ml/processing",
+  })
+}
