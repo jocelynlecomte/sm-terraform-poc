@@ -11,6 +11,11 @@
             "Name": "InputData",
             "Type": "String",
             "DefaultValue": "s3://${bucket}/abalone/preprocessing/input/input-data.csv"
+        },
+        {
+            "Name": "TrainingInstanceType",
+            "Type": "String",
+            "DefaultValue": "ml.m5.xlarge"
         }
     ],
     "Steps": [
@@ -126,6 +131,67 @@
                             }
                         }
                     ]
+                }
+            }
+        },
+        {
+            "Name": "AbaloneTrain",
+            "Type": "Training",
+            "Arguments": {
+                "AlgorithmSpecification": {
+                    "TrainingInputMode": "File",
+                    "TrainingImage": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.0-1-cpu-py3"
+                },
+                "OutputDataConfig": {
+                    "S3OutputPath": "s3://${bucket}/AbaloneTrain"
+                },
+                "StoppingCondition": {
+                    "MaxRuntimeInSeconds": 86400
+                },
+                "ResourceConfig": {
+                    "VolumeSizeInGB": 30,
+                    "InstanceCount": 1,
+                    "InstanceType": {
+                        "Get": "Parameters.TrainingInstanceType"
+                    }
+                },
+                "RoleArn": "${execution_role_arn}",
+                "InputDataConfig": [
+                    {
+                        "DataSource": {
+                            "S3DataSource": {
+                                "S3DataType": "S3Prefix",
+                                "S3Uri": {
+                                    "Get": "Steps.AbaloneProcess.ProcessingOutputConfig.Outputs['train'].S3Output.S3Uri"
+                                },
+                                "S3DataDistributionType": "FullyReplicated"
+                            }
+                        },
+                        "ContentType": "text/csv",
+                        "ChannelName": "train"
+                    },
+                    {
+                        "DataSource": {
+                            "S3DataSource": {
+                                "S3DataType": "S3Prefix",
+                                "S3Uri": {
+                                    "Get": "Steps.AbaloneProcess.ProcessingOutputConfig.Outputs['validation'].S3Output.S3Uri"
+                                },
+                                "S3DataDistributionType": "FullyReplicated"
+                            }
+                        },
+                        "ContentType": "text/csv",
+                        "ChannelName": "validation"
+                    }
+                ],
+                "HyperParameters": {
+                    "objective": "reg:linear",
+                    "num_round": "50",
+                    "max_depth": "5",
+                    "eta": "0.2",
+                    "gamma": "4",
+                    "min_child_weight": "6",
+                    "subsample": "0.7"
                 }
             }
         }
