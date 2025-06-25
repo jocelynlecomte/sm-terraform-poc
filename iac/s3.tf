@@ -67,3 +67,11 @@ resource "aws_s3_object" "abalone_evaluating_data" {
   source = "../abalone/evaluation/code/evaluation.py"
   etag   = filemd5("../abalone/evaluation/code/evaluation.py")
 }
+
+# Abalone Transform Resources
+resource "aws_s3_object" "abalone_batch_data" {
+  bucket = aws_s3_bucket.sm_poc_bucket.bucket
+  key    = "/abalone/transform/input/input-data.csv"
+  source = "../abalone/transform/data/abalone-dataset-batch.csv"
+  etag   = filemd5("../abalone/transform/data/abalone-dataset-batch.csv")
+}

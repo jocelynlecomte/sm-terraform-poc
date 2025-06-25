@@ -16,6 +16,21 @@
             "Name": "TrainingInstanceType",
             "Type": "String",
             "DefaultValue": "ml.m5.xlarge"
+        },
+        {
+            "Name": "ModelApprovalStatus",
+            "Type": "String",
+            "DefaultValue": "PendingManualApproval"
+        },
+        {
+            "Name": "BatchData",
+            "Type": "String",
+            "DefaultValue": "s3://${bucket}/abalone/transform/input/input-data.csv"
+        },
+        {
+            "Name": "MseThreshold",
+            "Type": "Float",
+            "DefaultValue": 6
         }
     ],
     "Steps": [
@@ -288,6 +303,145 @@
                     "FilePath": "evaluation.json"
                 }
             ]
+        },
+        {
+            "Name": "AbaloneMSECondition",
+            "Type": "Condition",
+            "Arguments": {
+                "Conditions": [
+                    {
+                        "Type": "LessThanOrEqualTo",
+                        "LeftValue": {
+                            "Std:JsonGet": {
+                                "PropertyFile": {
+                                    "Get": "Steps.AbaloneEvaluation.PropertyFiles.EvaluationReport"
+                                },
+                                "Path": "regression_metrics.mse.value"
+                            }
+                        },
+                        "RightValue": {
+                            "Get": "Parameters.MseThreshold"
+                        }
+                    }
+                ],
+                "IfSteps": [
+                    {
+                        "Name": "AbaloneRegisterModel",
+                        "Type": "RegisterModel",
+                        "Arguments": {
+                            "ModelPackageGroupName": "AbaloneModelGroup",
+                            "ModelMetrics": {
+                                "ModelQuality": {
+                                    "Statistics": {
+                                        "ContentType": "application/json",
+                                        "S3Uri": {
+                                            "Std:Join": {
+                                                "On": "/",
+                                                "Values": [
+                                                    "s3://${bucket}/AbalonePipeline",
+                                                    {
+                                                        "Get": "Execution.PipelineExecutionId"
+                                                    },
+                                                    "AbaloneEvaluation/output/evaluation.json"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                "Bias": {},
+                                "Explainability": {}
+                            },
+                            "InferenceSpecification": {
+                                "Containers": [
+                                    {
+                                        "Image": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.0-1-cpu-py3",
+                                        "Environment": {},
+                                        "ModelDataUrl": {
+                                            "Get": "Steps.AbaloneTrain.ModelArtifacts.S3ModelArtifacts"
+                                        }
+                                    }
+                                ],
+                                "SupportedContentTypes": [
+                                    "text/csv"
+                                ],
+                                "SupportedResponseMIMETypes": [
+                                    "text/csv"
+                                ],
+                                "SupportedRealtimeInferenceInstanceTypes": [
+                                    "ml.t2.medium",
+                                    "ml.m5.xlarge"
+                                ],
+                                "SupportedTransformInstanceTypes": [
+                                    "ml.m5.xlarge"
+                                ]
+                            },
+                            "ModelApprovalStatus": {
+                                "Get": "Parameters.ModelApprovalStatus"
+                            },
+                            "SkipModelValidation": "None"
+                        }
+                    },
+                    {
+                        "Name": "AbaloneCreateModel",
+                        "Type": "Model",
+                        "Arguments": {
+                            "ExecutionRoleArn": "${execution_role_arn}",
+                            "PrimaryContainer": {
+                                "Image": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.0-1-cpu-py3",
+                                "Environment": {},
+                                "ModelDataUrl": {
+                                    "Get": "Steps.AbaloneTrain.ModelArtifacts.S3ModelArtifacts"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Name": "AbaloneTransform",
+                        "Type": "Transform",
+                        "Arguments": {
+                            "ModelName": {
+                                "Get": "Steps.AbaloneCreateModel.ModelName"
+                            },
+                            "TransformInput": {
+                                "DataSource": {
+                                    "S3DataSource": {
+                                        "S3DataType": "S3Prefix",
+                                        "S3Uri": {
+                                            "Get": "Parameters.BatchData"
+                                        }
+                                    }
+                                }
+                            },
+                            "TransformOutput": {
+                                "S3OutputPath": "s3://${bucket}/AbaloneTransform"
+                            },
+                            "TransformResources": {
+                                "InstanceCount": 1,
+                                "InstanceType": "ml.m5.xlarge"
+                            }
+                        }
+                    }
+                ],
+                "ElseSteps": [
+                    {
+                        "Name": "AbaloneMSEFail",
+                        "Type": "Fail",
+                        "Arguments": {
+                            "ErrorMessage": {
+                                "Std:Join": {
+                                    "On": " ",
+                                    "Values": [
+                                        "Execution failed due to MSE >",
+                                        {
+                                            "Get": "Parameters.MseThreshold"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
         }
     ]
 }
