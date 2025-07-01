@@ -61,7 +61,7 @@ resource "aws_s3_object" "abalone_preprocessing_data" {
 }
 
 # Abalone Model Evaluation Resources
-resource "aws_s3_object" "abalone_evaluating_data" {
+resource "aws_s3_object" "abalone_evaluating_code" {
   bucket = aws_s3_bucket.sm_poc_bucket.bucket
   key    = "/abalone/evaluation/code/evaluation.py"
   source = "../abalone/evaluation/code/evaluation.py"
@@ -75,3 +75,6 @@ resource "aws_s3_object" "abalone_batch_data" {
   source = "../abalone/transform/data/abalone-dataset-batch.csv"
   etag   = filemd5("../abalone/transform/data/abalone-dataset-batch.csv")
 }
+
+################ Abalone Inference Pipeline Resources ################
+# get-model-lambda resources

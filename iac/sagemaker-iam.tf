@@ -19,18 +19,18 @@ resource "aws_iam_role_policy_attachment" "sagemaker_full_access_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
 }
 
-resource "aws_iam_role_policy_attachment" "custome_policy" {
+resource "aws_iam_role_policy_attachment" "sagemaker_custom_policy" {
   role       = aws_iam_role.sm_role.name
-  policy_arn = aws_iam_policy.custom_policy.arn
+  policy_arn = aws_iam_policy.sagemaker_custom_policy.arn
 }
 
-resource "aws_iam_policy" "custom_policy" {
+resource "aws_iam_policy" "sagemaker_custom_policy" {
   name        = "sm_poc_custom_policy"
   description = "Custom policy for SageMaker POC"
-  policy      = data.aws_iam_policy_document.custom_policy_document.json
+  policy      = data.aws_iam_policy_document.sagemaker_custom_policy_document.json
 }
 
-data "aws_iam_policy_document" "custom_policy_document" {
+data "aws_iam_policy_document" "sagemaker_custom_policy_document" {
   statement {
     sid = "AllowS3Access"
     actions = [
