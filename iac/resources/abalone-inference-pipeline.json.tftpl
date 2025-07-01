@@ -1,0 +1,63 @@
+{
+  "Version": "2020-12-01",
+  "Parameters": [
+    {
+        "Name": "BatchData",
+        "Type": "String",
+        "DefaultValue": "s3://${bucket}/abalone/transform/input/input-data.csv"
+    }
+  ],
+  "Steps": [
+    {
+        "Name": "GetModelUrl",
+        "Type": "Lambda",
+        "FunctionArn": "${get_model_url_function_arn}",
+        "Arguments": {
+            "model_package_group_name": "AbaloneModelGroup"
+        },
+        "OutputParameters": [
+            {"OutputName": "model_data_url", "OutputType": "String"}
+        ]
+    },
+    {
+        "Name": "AbaloneCreateModel",
+        "Type": "Model",
+        "Arguments": {
+            "ExecutionRoleArn": "${execution_role_arn}",
+            "PrimaryContainer": {
+                "Image": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.0-1-cpu-py3",
+                "Environment": {},
+                "ModelDataUrl": {
+                    "Get": "Steps.GetModelUrl.OutputParameters['model_data_url']"
+                }
+            }
+        }
+    },
+    {
+        "Name": "AbaloneTransform",
+        "Type": "Transform",
+        "Arguments": {
+            "ModelName": {
+                "Get": "Steps.AbaloneCreateModel.ModelName"
+            },
+            "TransformInput": {
+                "DataSource": {
+                    "S3DataSource": {
+                        "S3DataType": "S3Prefix",
+                        "S3Uri": {
+                            "Get": "Parameters.BatchData"
+                        }
+                    }
+                }
+            },
+            "TransformOutput": {
+                "S3OutputPath": "s3://${bucket}/abalone-inference/AbaloneTransform"
+            },
+            "TransformResources": {
+                "InstanceCount": 1,
+                "InstanceType": "ml.m5.xlarge"
+            }
+        }
+    }
+  ]
+}

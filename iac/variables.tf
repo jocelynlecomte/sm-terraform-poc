@@ -9,3 +9,10 @@ variable "default_az" {
   type        = string
   default     = "us-east-1a"
 }
+
+
+variable "account_id" {
+  description = "The AWS account ID where resources will be deployed"
+  type        = string
+  default     = "557690605188"
+}

@@ -41,4 +41,13 @@ data "aws_iam_policy_document" "sagemaker_custom_policy_document" {
       "${aws_s3_bucket.sm_poc_bucket.arn}/*",
     ]
   }
+  statement {
+    sid = "AllowInvokeFunction"
+    actions = [
+      "lambda:InvokeFunction",
+    ]
+    resources = [
+      "arn:aws:lambda:${var.region}:${var.account_id}:function:get-model-lambda"
+    ]
+  }
 }
