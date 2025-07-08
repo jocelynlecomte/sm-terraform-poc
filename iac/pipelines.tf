@@ -32,6 +32,8 @@ resource "aws_sagemaker_pipeline" "abalone_pipeline" {
     bucket = aws_s3_bucket.sm_poc_bucket.bucket,
     execution_role_arn = aws_iam_role.sm_role.arn,
     base_container_dir = "/opt/ml/processing",
+    abalone_query_function_arn = aws_lambda_function.abalone_query_lambda.arn,
+    database = aws_glue_catalog_database.poc_database.name
   })
 }
 

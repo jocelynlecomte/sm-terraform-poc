@@ -116,3 +116,5 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+/abalone-inference/abalone-query-lambda/lambda.zip
+/abalone-inference/get-model-lambda/lambda.zip

@@ -8,9 +8,9 @@
             "DefaultValue": 1
         },
         {
-            "Name": "InputData",
+            "Name": "Sex",
             "Type": "String",
-            "DefaultValue": "s3://${bucket}/abalone/preprocessing/input/input-data.csv"
+            "DefaultValue": "M, F, I"
         },
         {
             "Name": "TrainingInstanceType",
@@ -34,6 +34,19 @@
         }
     ],
     "Steps": [
+        {
+            "Name": "AbaloneQueryLambda",
+            "Type": "Lambda",
+            "FunctionArn": "${abalone_query_function_arn}",
+            "Arguments": {
+                "database": "${database}",
+                "bucket": "${bucket}",
+                "sex": "Parameters.Sex"
+            },
+            "OutputParameters": [
+                {"OutputName": "results_location", "OutputType": "String"}
+            ]
+        },
         {
             "Name": "AbaloneProcess",
             "Type": "Processing",
@@ -61,7 +74,7 @@
                         "AppManaged": false,
                         "S3Input": {
                             "S3Uri": {
-                                "Get": "Parameters.InputData"
+                                "Get": "Steps.AbaloneQueryLambda.OutputParameters['results_location']"
                             },
                             "LocalPath": "${base_container_dir}/input",
                             "S3DataType": "S3Prefix",

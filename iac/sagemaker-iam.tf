@@ -47,7 +47,8 @@ data "aws_iam_policy_document" "sagemaker_custom_policy_document" {
       "lambda:InvokeFunction",
     ]
     resources = [
-      "arn:aws:lambda:${var.region}:${var.account_id}:function:get-model-lambda"
+      "arn:aws:lambda:${var.region}:${var.account_id}:function:${local.get_model_lambda_name}",
+      "arn:aws:lambda:${var.region}:${var.account_id}:function:${local.abalone_query_lambda_name}",
     ]
   }
 }
