@@ -4,6 +4,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 athena_client = boto3.client('athena')
 
 def handler(event, context):
@@ -14,13 +15,14 @@ def handler(event, context):
 
     database = event.get('database')
     bucket = event.get('bucket')
-    sex = event.get('sex')
+    sex_string = event.get('sex')
+    sex = ','.join([f"'{s}'" for s in sex_string.split(',')])
     # raise exception if the event does not contain the required parameters
     if not database or not bucket or not sex:
         raise ValueError("Event must contain 'database' and 'bucket' and 'sex' parameters")
 
     try:
-        query_string = f"SELECT * FROM abalone WHERE sex IN ({sex})"
+        query_string = f'SELECT * FROM abalone WHERE sex IN ({sex})'
         query_execution_id = run_athena_query(query_string, database, bucket)
         if not has_query_succeeded(query_execution_id):
             raise Exception(f"Query {query_execution_id} did not complete successfully.")
@@ -58,6 +60,7 @@ def has_query_succeeded(execution_id):
                 and "State" in response["QueryExecution"]["Status"]
         ):
             state = response["QueryExecution"]["Status"]["State"]
+            logger.info(f"Query execution state {state} (execution {max_execution})")
             if state == "SUCCEEDED":
                 return True
 

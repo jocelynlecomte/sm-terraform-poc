@@ -47,12 +47,18 @@ def merge_two_dicts(x, y):
 if __name__ == "__main__":
     base_dir = "/opt/ml/processing"
 
+
+    input_files = [f for f in os.listdir(f"{base_dir}/input") if f.endswith(".csv")]
+    print(f"{len(input_files)} input files found: {input_files}")
+    first_file = os.path.join(f"{base_dir}/input/", input_files[0])
     df = pd.read_csv(
-        f"{base_dir}/input/input-data.csv",
-        header=None,
+        first_file,
+        header=0, # because we have headers in the CSV results from Athena
         names=feature_columns_names + [label_column],
         dtype=merge_two_dicts(feature_columns_dtype, label_column_dtype),
     )
+    print(f"Read {len(df)} lines from {first_file}")
+
     numeric_features = list(feature_columns_names)
     numeric_features.remove("sex")
     numeric_transformer = Pipeline(

@@ -10,7 +10,7 @@
         {
             "Name": "Sex",
             "Type": "String",
-            "DefaultValue": "M, F, I"
+            "DefaultValue": "M,F,I"
         },
         {
             "Name": "TrainingInstanceType",
@@ -41,7 +41,9 @@
             "Arguments": {
                 "database": "${database}",
                 "bucket": "${bucket}",
-                "sex": "Parameters.Sex"
+                "sex": {
+                   "Get": "Parameters.Sex"
+               }
             },
             "OutputParameters": [
                 {"OutputName": "results_location", "OutputType": "String"}
