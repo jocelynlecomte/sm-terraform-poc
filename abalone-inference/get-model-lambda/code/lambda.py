@@ -3,6 +3,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 sm_client = boto3.client('sagemaker')
 
 def handler(event, context):

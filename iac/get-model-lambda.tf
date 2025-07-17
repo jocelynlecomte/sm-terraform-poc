@@ -16,6 +16,11 @@ data "aws_iam_policy_document" "get_model_lambda_assume_role_policy" {
   }
 }
 
+resource "aws_iam_role_policy_attachment" "get_model_lambda_basic_execution" {
+  role       = aws_iam_role.get_model_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
 resource "aws_iam_role_policy_attachment" "get_model_lambda_custom_policy" {
   role       = aws_iam_role.get_model_lambda_role.name
   policy_arn = aws_iam_policy.get_model_lambda_custom_policy.arn
